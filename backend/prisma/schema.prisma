@@ -1,0 +1,82 @@
+// Prisma schema for the Slooze food ordering challenge.
+//
+// NOTE: SQLite does not support native Prisma `enum` types, so Role / Country /
+// OrderStatus are stored as `String` columns here and modelled as real
+// TypeScript + GraphQL enums in the application layer (see src/common/enums.ts).
+// This keeps the assignment runnable with zero external services while still
+// presenting a typed enum contract to API consumers.
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  role      String // Role enum: ADMIN | MANAGER | MEMBER
+  country   String // Country enum: INDIA | AMERICA
+  orders    Order[]
+  createdAt DateTime @default(now())
+}
+
+model Restaurant {
+  id        String     @id @default(cuid())
+  name      String
+  country   String // Country enum: INDIA | AMERICA
+  menuItems MenuItem[]
+  orders    Order[]
+  createdAt DateTime   @default(now())
+}
+
+model MenuItem {
+  id           String      @id @default(cuid())
+  name         String
+  description  String?
+  price        Float
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  restaurantId String
+  orderItems   OrderItem[]
+  createdAt    DateTime    @default(now())
+}
+
+model Order {
+  id              String         @id @default(cuid())
+  user            User           @relation(fields: [userId], references: [id])
+  userId          String
+  restaurant      Restaurant     @relation(fields: [restaurantId], references: [id])
+  restaurantId    String
+  country         String // denormalised from restaurant for fast scoping
+  status          String // OrderStatus enum: PENDING | PAID | CANCELLED
+  total           Float          @default(0)
+  items           OrderItem[]
+  paymentMethod   PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+  paymentMethodId String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model OrderItem {
+  id           String   @id @default(cuid())
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId      String
+  menuItem     MenuItem @relation(fields: [menuItemId], references: [id])
+  menuItemId   String
+  quantity     Int      @default(1)
+  priceAtOrder Float
+}
+
+model PaymentMethod {
+  id        String   @id @default(cuid())
+  label     String // e.g. "Corporate Visa ••4242"
+  type      String // e.g. CARD | UPI | NET_BANKING
+  country   String // Country enum: INDIA | AMERICA
+  details   String? // masked, illustrative only
+  orders    Order[]
+  createdAt DateTime @default(now())
+}

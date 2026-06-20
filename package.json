@@ -1,0 +1,25 @@
+{
+  "name": "slooze-fullstack-challenge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Food ordering app with RBAC + country-scoped ReBAC (Slooze fullstack challenge)",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "env": "node -e \"const fs=require('fs');for(const p of ['backend','frontend']){const e=p+'/.env',x=p+'/.env.example';if(!fs.existsSync(e)&&fs.existsSync(x))fs.copyFileSync(x,e)}\"",
+    "setup": "npm run env && npm run setup --workspace backend",
+    "dev": "concurrently -n backend,frontend -c blue,green \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "dev:backend": "npm run start:dev --workspace backend",
+    "dev:frontend": "npm run dev --workspace frontend",
+    "build": "npm run build --workspace backend && npm run build --workspace frontend",
+    "test": "npm run test --workspace backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
